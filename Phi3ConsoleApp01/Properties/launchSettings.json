@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Phi3ConsoleApp01": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Debug"
+      }
+    }
+  }
+}
