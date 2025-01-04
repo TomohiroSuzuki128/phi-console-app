@@ -16,6 +16,9 @@ string modelPhi3Med128k = configuration["modelPhi3Med128k"] ?? throw new Argumen
 string modelPhi3Min4k = configuration["modelPhi3Min4k"] ?? throw new ArgumentNullException("modelPhi3Min4k is not found.");
 string modelPhi3Min128k = configuration["modelPhi3Min128k"] ?? throw new ArgumentNullException("modelPhi3Min128k is not found.");
 
+var systemPrompt = configuration["systemPrompt"] ?? throw new ArgumentNullException("systemPrompt is not found.");
+var userPrompt = configuration["userPrompt"] ?? throw new ArgumentNullException("userPrompt is not found.");
+
 using OgaHandle ogaHandle = new OgaHandle();
 
 // モデルのセットアップ
@@ -29,16 +32,8 @@ sw.Stop();
 Console.WriteLine($"\r\nModel loading time is {sw.Elapsed.Seconds:0.00} sec.\r\n");
 
 sw = Stopwatch.StartNew();
+
 // プロンプトのセットアップ
-//var systemPrompt = "あなたはRPGゲーム、「ドラゴンクエスト」に詳しいゲームの達人です。与えられた質問にドラゴンクエストの知識を最大限活用して解説してください。";
-//var userPrompt = "「ドラゴンクエスト」のキャラクターデザインを担当したのは誰か教えてください。";
-
-var systemPrompt = "あなたはRPGゲーム、「ファイナルファンタジー7」に詳しいゲームの達人です。与えられた質問にファイナルファンタジー7の知識を最大限活用して解説してください。";
-var userPrompt = "「ファイナルファンタジー7」の主人公の名前を教えてください。";
-
-//var systemPrompt = "You are a game guru who is familiar with the RPG game, Final Fantasy 7. Please explain the given question by making the best use of your knowledge of Final Fantasy 7.";
-//var userPrompt = "What is the name of the main character in Final Fantasy 7?";
-
 Console.WriteLine($"\r\n{userPrompt}\r\n");
 
 var sequences = tokenizer.Encode($@"<|system|>{systemPrompt}<|end|><|user|>{userPrompt}<|end|><|assistant|>");
