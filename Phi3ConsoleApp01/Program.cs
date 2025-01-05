@@ -38,6 +38,7 @@ Console.WriteLine($"\r\nユーザープロンプト：\r\n{userPrompt}\r\n");
 
 var sequences = tokenizer.Encode($@"<|system|>{systemPrompt}<|end|><|user|>{userPrompt}<|end|><|assistant|>");
 
+// プロンプトを投げて回答を得る
 using GeneratorParams generatorParams = new GeneratorParams(model);
 generatorParams.SetSearchOption("min_length", 100);
 generatorParams.SetSearchOption("max_length", 2000);
