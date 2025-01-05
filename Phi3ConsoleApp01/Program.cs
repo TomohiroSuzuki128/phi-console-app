@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.ML.OnnxRuntimeGenAI;
 using System.Diagnostics;
+using System.Text;
 
 
 var env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? string.Empty;
@@ -22,7 +23,7 @@ var userPrompt = configuration["userPrompt"] ?? throw new ArgumentNullException(
 using OgaHandle ogaHandle = new OgaHandle();
 
 // モデルのセットアップ
-var modelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, modelPhi35Min128k);
+var modelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, modelPhi3Med128k);
 
 var sw = Stopwatch.StartNew();
 using Model model = new Model(modelPath);
@@ -31,13 +32,13 @@ sw.Stop();
 
 Console.WriteLine($"\r\nModel loading time is {sw.Elapsed.Seconds:0.00} sec.\r\n");
 
-sw = Stopwatch.StartNew();
-
 // プロンプトのセットアップ
-Console.WriteLine($"\r\n{userPrompt}\r\n");
+Console.WriteLine($"\r\nシステムプロンプト：\r\n{systemPrompt}");
+Console.WriteLine($"\r\nユーザープロンプト：\r\n{userPrompt}\r\n");
 
 var sequences = tokenizer.Encode($@"<|system|>{systemPrompt}<|end|><|user|>{userPrompt}<|end|><|assistant|>");
 
+// プロンプトを投げて回答を得る
 using GeneratorParams generatorParams = new GeneratorParams(model);
 generatorParams.SetSearchOption("min_length", 100);
 generatorParams.SetSearchOption("max_length", 2000);
@@ -46,15 +47,30 @@ generatorParams.SetInputSequences(sequences);
 
 using var tokenizerStream = tokenizer.CreateStream();
 using var generator = new Generator(model, generatorParams);
+StringBuilder stringBuilder = new();
+
+Console.WriteLine("レスポンス：");
 
 var totalTokens = 0;
+
+string part;
+sw = Stopwatch.StartNew();
 while (!generator.IsDone())
 {
     try
     {
+        await Task.Delay(10).ConfigureAwait(false);
         generator.ComputeLogits();
         generator.GenerateNextToken();
-        Console.Write(tokenizerStream.Decode(generator.GetSequence(0)[^1]));
+        part = tokenizerStream.Decode(generator.GetSequence(0)[^1]);
+        Console.Write(part);
+        stringBuilder.Append(part);
+        if (stringBuilder.ToString().Contains("<|end|>")
+            || stringBuilder.ToString().Contains("<|user|>")
+            || stringBuilder.ToString().Contains("<|system|>"))
+        {
+            break;
+        }
     }
     catch (Exception ex)
     {
@@ -62,10 +78,10 @@ while (!generator.IsDone())
         break;
     }
 }
-sw.Stop();
 Console.WriteLine("\r\n");
+sw.Stop();
 
 totalTokens = generator.GetSequence(0).Length;
 
 Console.WriteLine($"Streaming Tokens: {totalTokens} - Time: {sw.Elapsed.Seconds:0.00} sec");
-Console.WriteLine($"Tokens per second: {(totalTokens / sw.Elapsed.Seconds):0.000} tokens");
+Console.WriteLine($"Tokens per second: {((double)totalTokens / sw.Elapsed.TotalSeconds):0.00} tokens");
