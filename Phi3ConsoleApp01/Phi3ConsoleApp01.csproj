@@ -265,6 +265,39 @@
     <None Update="models\phi3-mini-4k-instruct-cpu-int4-rtn-block-32-acc-level-4-onnx\tokenizer_config.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="models\unofficial-phi-4-onnx-cpu-int4\.gitattributes">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="models\unofficial-phi-4-onnx-cpu-int4\config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="models\unofficial-phi-4-onnx-cpu-int4\genai_config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="models\unofficial-phi-4-onnx-cpu-int4\merges.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="models\unofficial-phi-4-onnx-cpu-int4\model.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="models\unofficial-phi-4-onnx-cpu-int4\model.onnx.data">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="models\unofficial-phi-4-onnx-cpu-int4\README.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="models\unofficial-phi-4-onnx-cpu-int4\special_tokens_map.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="models\unofficial-phi-4-onnx-cpu-int4\tokenizer.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="models\unofficial-phi-4-onnx-cpu-int4\tokenizer_config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="models\unofficial-phi-4-onnx-cpu-int4\vocab.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

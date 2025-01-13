@@ -16,6 +16,7 @@ string modelPhi3Med4k = configuration["modelPhi3Med4k"] ?? throw new ArgumentNul
 string modelPhi3Med128k = configuration["modelPhi3Med128k"] ?? throw new ArgumentNullException("modelPhi3Med128k is not found.");
 string modelPhi3Min4k = configuration["modelPhi3Min4k"] ?? throw new ArgumentNullException("modelPhi3Min4k is not found.");
 string modelPhi3Min128k = configuration["modelPhi3Min128k"] ?? throw new ArgumentNullException("modelPhi3Min128k is not found.");
+string modelPhi4Unofficial = configuration["modelPhi4Unofficial"] ?? throw new ArgumentNullException("modelPhi4Unofficial is not found.");
 
 var systemPrompt = configuration["systemPrompt"] ?? throw new ArgumentNullException("systemPrompt is not found.");
 var userPrompt = configuration["userPrompt"] ?? throw new ArgumentNullException("userPrompt is not found.");
@@ -23,7 +24,7 @@ var userPrompt = configuration["userPrompt"] ?? throw new ArgumentNullException(
 using OgaHandle ogaHandle = new OgaHandle();
 
 // モデルのセットアップ
-var modelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, modelPhi3Med128k);
+var modelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, modelPhi35Min128k);
 
 var sw = Stopwatch.StartNew();
 using Model model = new Model(modelPath);

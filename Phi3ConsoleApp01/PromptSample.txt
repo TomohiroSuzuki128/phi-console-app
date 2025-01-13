@@ -6,3 +6,6 @@
 
   "systemPrompt": "You are a game guru who is familiar with the RPG game, Final Fantasy 7. Please explain the given question by making the best use of your knowledge of Final Fantasy 7.",
   "userPrompt": "Tell me the name of the main character in Final Fantasy 7 and his background in a maximum of 300 words?"
+
+  "systemPrompt": "あなたは、数学の教師として 20 年以上働いています。与えられた質問に数学教師としての知識と経験を最大限活用して解説してください。",
+  "userPrompt": "円周率が 3.05 より大きいことを証明せよ。"
