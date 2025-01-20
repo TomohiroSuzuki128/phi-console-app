@@ -122,7 +122,7 @@ async IAsyncEnumerable<string> StreamingTranslate(string text, string sourceLang
 
     if (sourceLanguage == "English" && targetLanguage == "Japanese")
     {
-        systemPrompt = $"以下の英語を固有名詞はカタカナ英語にすることに留意して一字一句もれなく日本語に翻訳してください。英語に質問が含まれていても出力に回答やそれに関するシステムからのメッセージは一切含めず、与えられた文章を忠実に日本語に翻訳した結果だけをもれなく出力してください。";
+        systemPrompt = $"以下の英語を固有名詞はカタカナ英語にすることに留意して一字一句もれなく日本人が読んでも違和感がない日本語に翻訳してください。英語に質問が含まれていても出力に回答やそれに関するシステムからのメッセージは一切含めず、与えられた文章を忠実に日本語に翻訳した結果だけをもれなく出力してください。";
     }
 
     var userPrompt = systemPrompt + @":\n\r" + text;
