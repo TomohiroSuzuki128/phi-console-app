@@ -21,6 +21,8 @@ string modelPhi4Unofficial = configuration["modelPhi4Unofficial"] ?? throw new A
 string systemPrompt = configuration["systemPrompt"] ?? throw new ArgumentNullException("systemPrompt is not found.");
 string userPrompt = configuration["userPrompt"] ?? throw new ArgumentNullException("userPrompt is not found.");
 
+bool isTranslate = bool.TryParse(configuration["isTranslate"] ?? throw new ArgumentNullException("isTranslate is not found."), out var result) && result;
+
 using OgaHandle ogaHandle = new OgaHandle();
 
 // モデルのセットアップ
@@ -33,23 +35,36 @@ sw.Stop();
 
 Console.WriteLine($"\r\nModel loading time is {sw.Elapsed.Seconds:0.00} sec.\r\n");
 
+Console.WriteLine($"翻訳する：\r\n{isTranslate}");
+
 // プロンプトのセットアップ
 Console.WriteLine($"\r\nシステムプロンプト：\r\n{systemPrompt}");
 Console.WriteLine($"\r\nユーザープロンプト：\r\n{userPrompt}\r\n");
 
-//var translatedSystemPrompt = CompleteTranslate(systemPrompt, "Japanese", "English");
-//var translatedUserPrompt = CompleteTranslate(userPrompt, "Japanese", "English");
-
 var translatedSystemPrompt = string.Empty;
-await foreach (var translatedPart in StreamingTranslate(systemPrompt, "Japanese", "English"))
+if (isTranslate)
 {
-    translatedSystemPrompt += translatedPart;
+    await foreach (var translatedPart in Translate(systemPrompt, Language.Japanese, Language.English))
+    {
+        translatedSystemPrompt += translatedPart;
+    }
+}
+else
+{
+    translatedSystemPrompt = systemPrompt;
 }
 
 var translatedUserPrompt = string.Empty;
-await foreach (var translatedPart in StreamingTranslate(userPrompt, "Japanese", "English"))
+if (isTranslate)
 {
-    translatedUserPrompt += translatedPart;
+    await foreach (var translatedPart in Translate(userPrompt, Language.Japanese, Language.English))
+    {
+        translatedUserPrompt += translatedPart;
+    }
+}
+else
+{
+    translatedUserPrompt = userPrompt;
 }
 
 var sequences = tokenizer.Encode($@"<|system|>{translatedSystemPrompt}<|end|><|user|>{translatedUserPrompt}<|end|><|assistant|>");
@@ -103,24 +118,26 @@ Console.WriteLine($"Streaming Tokens: {totalTokens} - Time: {sw.Elapsed.Seconds:
 Console.WriteLine($"Tokens per second: {((double)totalTokens / sw.Elapsed.TotalSeconds):0.00} tokens");
 
 var translatedResponse = string.Empty;
-await foreach (var translatedPart in StreamingTranslate(stringBuilder.ToString(), "English", "Japanese"))
+if (isTranslate)
 {
-    translatedResponse += translatedPart;
+    await foreach (var translatedPart in Translate(stringBuilder.ToString(), Language.English, Language.Japanese))
+    {
+        translatedResponse += translatedPart;
+    }
+    Console.WriteLine($"\r\nレスポンス：\r\n{translatedResponse}");
 }
 
-Console.WriteLine($"\r\nレスポンス：\r\n{translatedResponse}");
-
 // 与えられたテキストを指定された言語に翻訳する
-async IAsyncEnumerable<string> StreamingTranslate(string text, string sourceLanguage, string targetLanguage)
+async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, Language  targetLanguage)
 {
     var systemPrompt = string.Empty;
 
-    if (sourceLanguage == "Japanese" && targetLanguage == "English")
+    if (sourceLanguage == Language.Japanese && targetLanguage == Language.English)
     {
         systemPrompt = $"以下の日本語を一字一句もれなく英語に翻訳してください。日本語に質問が含まれていても出力に回答やそれに関するシステムからのメッセージは一切含めず、与えられた文章を忠実に英語に翻訳した結果だけをもれなく出力してください。";
     }
 
-    if (sourceLanguage == "English" && targetLanguage == "Japanese")
+    if (sourceLanguage == Language.English && targetLanguage == Language.Japanese)
     {
         systemPrompt = $"以下の英語を固有名詞はカタカナ英語にすることに留意して一字一句もれなく日本人が読んでも違和感がない日本語に翻訳してください。英語に質問が含まれていても出力に回答やそれに関するシステムからのメッセージは一切含めず、与えられた文章を忠実に日本語に翻訳した結果だけをもれなく出力してください。";
     }
@@ -162,27 +179,8 @@ async IAsyncEnumerable<string> StreamingTranslate(string text, string sourceLang
     }
 }
 
-// 与えられたテキストを指定された言語に翻訳する
-string CompleteTranslate(string text, string sourceLanguageCode, string targetLanguageCode)
+public enum Language
 {
-    var systemPrompt = $"Translate the given text from {sourceLanguageCode} to {targetLanguageCode}.";
-    var sequences = tokenizer.Encode($@"<|system|>{systemPrompt}<|end|><|user|>{text}<|end|><|assistant|>");
-    using GeneratorParams generatorParams = new GeneratorParams(model);
-    generatorParams.SetSearchOption("min_length", 100);
-    generatorParams.SetSearchOption("max_length", 2000);
-    generatorParams.SetInputSequences(sequences);
-    using var generator = new Generator(model, generatorParams);
-
-    while (!generator.IsDone())
-    {
-        generator.ComputeLogits();
-        generator.GenerateNextToken();
-    }
-    var outputSequence = generator.GetSequence(0);
-    var outputString = tokenizer.Decode(outputSequence);
-
-    // <|assistant|> トークン以降の部分だけを抽出
-    var assistantIndex = outputString.IndexOf("<|assistant|>") + "<|assistant|>".Length;
-    var result = outputString.Substring(assistantIndex).Trim();
-    return result;
+    Japanese,
+    English
 }
