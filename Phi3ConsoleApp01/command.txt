@@ -4,28 +4,29 @@ Phi3 mini 4k
 https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-onnx/tree/main/cpu_and_mobile
 
 huggingface-cli download microsoft/Phi-3-mini-4k-instruct-onnx --include cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4/* --local-dir <your-download-dir>
-　
+
 
 Phi3 mini 128k
 https://huggingface.co/microsoft/Phi-3-mini-128k-instruct-onnx/tree/main/cpu_and_mobile
 
 huggingface-cli download microsoft/Phi-3-mini-128k-instruct-onnx --include cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4* --local-dir <your-download-dir>
-　
+
 
 Phi3 medium 4k
 https://huggingface.co/microsoft/Phi-3-medium-4k-instruct-onnx-cpu/tree/main
 
 huggingface-cli download microsoft/Phi-3-medium-4k-instruct-onnx-cpu --include cpu-int4-rtn-block-32-acc-level-4/* --local-dir <your-download-dir>
-　
+
 
 Phi3 medium 128k
 https://huggingface.co/microsoft/Phi-3-medium-128k-instruct-onnx-cpu/tree/main
 
 huggingface-cli download microsoft/Phi-3-medium-128k-instruct-onnx-cpu --include cpu-int4-rtn-block-32-acc-level-4/* --local-dir <your-download-dir>
-　
+
 
 Phi3.5 mini 128k
 https://huggingface.co/microsoft/Phi-3.5-mini-instruct-onnx/tree/main/cpu_and_mobile
+
 
 huggingface-cli download microsoft/Phi-3.5-mini-instruct-onnx --include  cpu_and_mobile/cpu-int4-awq-block-128-acc-level-4/* --local-dir <your-download-dir>\phi-3.5-mini-instruct-cpu-int4-awq-block-128-acc-level-4-onnx
 　
