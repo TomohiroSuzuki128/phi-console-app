@@ -2,7 +2,6 @@
 using Microsoft.ML.OnnxRuntimeGenAI;
 using System.Diagnostics;
 using System.Text;
-using static System.Net.Mime.MediaTypeNames;
 
 var env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? string.Empty;
 var configuration = new ConfigurationBuilder()
