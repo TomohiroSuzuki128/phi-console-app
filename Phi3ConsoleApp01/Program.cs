@@ -127,7 +127,7 @@ if (isTranslate)
 }
 
 // 与えられたテキストを指定された言語に翻訳する
-async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, Language  targetLanguage)
+async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, Language targetLanguage)
 {
     var systemPrompt = string.Empty;
 
