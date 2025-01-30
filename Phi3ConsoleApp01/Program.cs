@@ -35,7 +35,7 @@ var vectorDatabase = new BasicMemoryVectorDatabase();
 LoadAdditionalDocuments(additionalDocumentsDirectory).Wait();
 
 // モデルのセットアップ
-var modelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, modelPhi3Min128k);
+var modelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, modelPhi35Min128k);
 
 var sw = Stopwatch.StartNew();
 using Model model = new Model(modelPath);
