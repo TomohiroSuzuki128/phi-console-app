@@ -1,17 +1,22 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.ML.OnnxRuntimeGenAI;
+﻿using Microsoft.ML.OnnxRuntimeGenAI;
 using System;
 using System.Diagnostics;
 using System.Text;
 using Build5Nines.SharpVector;
 using Build5Nines.SharpVector.Data;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
 
-var env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? string.Empty;
-var configuration = new ConfigurationBuilder()
-    .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("appsettings.json")
-    .AddJsonFile($"appsettings.{env}.json", true)
+HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+builder.Configuration.Sources.Clear();
+IHostEnvironment env = builder.Environment;
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .Build();
+
+var configuration = builder.Configuration;
 
 string modelPhi35Min128k = configuration["modelPhi35Min128k"] ?? throw new ArgumentNullException("modelPhi35Min128k is not found.");
 string modelPhi3Med4k = configuration["modelPhi3Med4k"] ?? throw new ArgumentNullException("modelPhi3Med4k is not found.");
