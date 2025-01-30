@@ -20,9 +20,6 @@
     <None Update="additional-docs\ff7.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="appsettings.debug.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="appsettings.default.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
