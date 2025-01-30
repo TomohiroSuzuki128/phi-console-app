@@ -400,5 +400,5 @@ FodyWeavers.xsd
 *.sln.iml
 
 # My files
-Phi3ConsoleApp01/appsettings.debug.json
+PhiConsoleApp/appsettings.debug.json
 models
