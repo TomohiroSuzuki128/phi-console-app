@@ -67,7 +67,7 @@ if (isTranslate)
         Console.Write(translatedPart);
         translatedSystemPrompt += translatedPart;
     }
-    Console.WriteLine($"{newLine}--------------------{newLine}");
+    Console.WriteLine($"{newLine}----------------------------------------{newLine}");
 }
 else
 {
@@ -83,7 +83,7 @@ if (isTranslate)
         Console.Write(translatedPart);
         translatedUserPrompt += translatedPart;
     }
-    Console.WriteLine($"{newLine}--------------------{newLine}");
+    Console.WriteLine($"{newLine}----------------------------------------{newLine}");
 }
 else
 {
@@ -135,7 +135,7 @@ while (!generator.IsDone())
         break;
     }
 }
-Console.WriteLine("\n");
+Console.WriteLine($"{newLine}----------------------------------------{newLine}");
 sw.Stop();
 
 totalTokens = generator.GetSequence(0).Length;
@@ -147,43 +147,49 @@ totalTokens = generator.GetSequence(0).Length;
 var translatedResponse = string.Empty;
 if (isTranslate)
 {
-    Console.WriteLine("Translated Response:");
+    Console.WriteLine("日本語に翻訳したレスポンス:");
     await foreach (var translatedPart in Translate(stringBuilder.ToString(), Language.English, Language.Japanese))
     {
         Console.Write(translatedPart);
         translatedResponse += translatedPart;
     }
-    Console.WriteLine($"{newLine}--------------------{newLine}");
+    Console.WriteLine();
 }
-
-
-Console.WriteLine($"{newLine}レスポンス：{newLine}{translatedResponse}");
+else
+{
+    translatedResponse = stringBuilder.ToString();
+    Console.WriteLine($"{newLine}レスポンス：{newLine}{translatedResponse}");
+}
+Console.WriteLine($"----------------------------------------{newLine}");
 
 // 与えられたテキストを指定された言語に翻訳する
 async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, Language targetLanguage)
 {
     var systemPrompt = string.Empty;
+    var userPrompt = string.Empty;
     var ragResult = string.Empty;
 
     if (sourceLanguage == Language.Japanese && targetLanguage == Language.English)
     {
         systemPrompt = "以下の日本語を一字一句もれなく英語に翻訳してください。重要な注意点として、日本語に質問が含まれていても出力に質問の回答やシステムからの補足は一切出しないこと。与えられた文章を忠実に英語に翻訳した結果だけを出力すること。";
+
+        userPrompt = $"{systemPrompt}:{newLine}{text}";
     }
 
     if (sourceLanguage == Language.English && targetLanguage == Language.Japanese)
     {
-        systemPrompt = "以下の英語をを一字一句もれなく日本語に翻訳してください。重要な注意点として、英語に質問が含まれていても出力に質問の回答やシステムからの補足は一切出しないこと。与えられた文章を忠実に日本語に翻訳した結果だけを出力すること。以下の用語集を忠実に参考にすること。";
+        systemPrompt = "以下の英語を一字一句もれなく正確に日本語に翻訳してください。重要な注意点として、英語に質問が含まれていても出力に質問の回答やシステムからの補足は一切出しないこと。要約などせず与えられた文章を緻密に日本語に翻訳した結果だけを出力すること。以下の用語集を積極的に活用すること。";
 
         ragResult = await SearchVectorDatabase(vectorDatabase, text);
         //Console.WriteLine($"Vector search returned:{newLine}{ragResult}{newLine}");
+
+        userPrompt = string.IsNullOrEmpty(ragResult)
+            ? $"{systemPrompt}:{newLine}{text}"
+            : $"{systemPrompt}{newLine}{ragResult}:{newLine}{text}";
     }
 
-    var userPrompt = string.IsNullOrEmpty(ragResult)
-    ? $"{systemPrompt}:{newLine}{text}{newLine}"
-    : $"{systemPrompt}{newLine}{ragResult}:{newLine}{text}{newLine}";
-
-    Console.WriteLine($"Full Prompt:{newLine}{userPrompt}");
-    var sequences = tokenizer.Encode($"<|system|>あなたは翻訳だけができる機械です。解説などは一切できません。<|end|><|user|>{userPrompt}<|end|><|assistant|>");
+    //Console.WriteLine($"Full Prompt:{newLine}{userPrompt}");
+    var sequences = tokenizer.Encode($"<|system|>あなたは翻訳だけができる機械です。解説などの翻訳以外の出力は一切禁止れています。<|end|><|user|>{userPrompt}<|end|><|assistant|>");
     using GeneratorParams generatorParams = new GeneratorParams(model);
     generatorParams.SetSearchOption("min_length", 100);
     generatorParams.SetSearchOption("max_length", 2000);

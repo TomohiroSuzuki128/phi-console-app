@@ -28,3 +28,4 @@
  - defect 離反する
  - rebels 反乱軍
  - redemption 贖罪
+ - bustling 賑やかな
