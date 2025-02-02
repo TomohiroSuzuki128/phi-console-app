@@ -6,6 +6,7 @@ using Build5Nines.SharpVector;
 using Build5Nines.SharpVector.Data;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 var newLine = Environment.NewLine;
 
@@ -99,6 +100,7 @@ var sequences = tokenizer.Encode($@"<|system|>{translatedSystemPrompt}<|end|><|u
 using GeneratorParams generatorParams = new GeneratorParams(model);
 generatorParams.SetSearchOption("min_length", 100);
 generatorParams.SetSearchOption("max_length", 2000);
+generatorParams.SetSearchOption("top_p", 0.9f);
 generatorParams.TryGraphCaptureWithMaxBatchSize(1);
 generatorParams.SetInputSequences(sequences);
 
