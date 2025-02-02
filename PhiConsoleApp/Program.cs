@@ -4,9 +4,10 @@ using System.Diagnostics;
 using System.Text;
 using Build5Nines.SharpVector;
 using Build5Nines.SharpVector.Data;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
+
+var newLine = Environment.NewLine;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Configuration.Sources.Clear();
@@ -37,30 +38,36 @@ using OgaHandle ogaHandle = new OgaHandle();
 var additionalDocumentsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, additionalDocumentsPath);
 var vectorDatabase = new BasicMemoryVectorDatabase();
 LoadAdditionalDocuments(additionalDocumentsDirectory).Wait();
+Console.WriteLine();
 
 // モデルのセットアップ
-var modelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, modelPhi3Min128k);
+var modelPath = modelPhi35Min128k;
+Console.WriteLine($"Loading model:{newLine}{modelPath}");
 
 var sw = Stopwatch.StartNew();
 using Model model = new Model(modelPath);
 using Tokenizer tokenizer = new Tokenizer(model);
 sw.Stop();
 
-Console.WriteLine($"{Environment.NewLine}Model loading time is {sw.Elapsed.Seconds:0.00} sec.\n");
+Console.WriteLine($"{newLine}Model loading time is {sw.Elapsed.Seconds:0.00} sec.\n");
 
-Console.WriteLine($"翻訳する：{Environment.NewLine}{isTranslate}");
+// 翻訳するかどうか
+Console.WriteLine($"翻訳する：{newLine}{isTranslate}");
 
 // プロンプトのセットアップ
-Console.WriteLine($"{Environment.NewLine}システムプロンプト：{Environment.NewLine}{systemPrompt}");
-Console.WriteLine($"{Environment.NewLine}ユーザープロンプト：{Environment.NewLine}{userPrompt}{Environment.NewLine}");
+Console.WriteLine($"{newLine}システムプロンプト：{newLine}{systemPrompt}");
+Console.WriteLine($"{newLine}ユーザープロンプト：{newLine}{userPrompt}{newLine}");
 
 var translatedSystemPrompt = string.Empty;
 if (isTranslate)
 {
+    Console.WriteLine("Translated System Prompt:");
     await foreach (var translatedPart in Translate(systemPrompt, Language.Japanese, Language.English))
     {
+        Console.Write(translatedPart);
         translatedSystemPrompt += translatedPart;
     }
+    Console.WriteLine($"{newLine}--------------------{newLine}");
 }
 else
 {
@@ -70,15 +77,21 @@ else
 var translatedUserPrompt = string.Empty;
 if (isTranslate)
 {
+    Console.WriteLine("Translated User Prompt:");
     await foreach (var translatedPart in Translate(userPrompt, Language.Japanese, Language.English))
     {
+        Console.Write(translatedPart);
         translatedUserPrompt += translatedPart;
     }
+    Console.WriteLine($"{newLine}--------------------{newLine}");
 }
 else
 {
     translatedUserPrompt = userPrompt;
 }
+
+Console.WriteLine($"{newLine}システムプロンプト：{newLine}{translatedSystemPrompt}");
+Console.WriteLine($"{newLine}ユーザープロンプト：{newLine}{translatedUserPrompt}{newLine}");
 
 var sequences = tokenizer.Encode($@"<|system|>{translatedSystemPrompt}<|end|><|user|>{translatedUserPrompt}<|end|><|assistant|>");
 
@@ -127,18 +140,20 @@ sw.Stop();
 
 totalTokens = generator.GetSequence(0).Length;
 
-Console.WriteLine($"Streaming Tokens: {totalTokens} - Time: {sw.Elapsed.Seconds:0.00} sec");
-Console.WriteLine($"Tokens per second: {((double)totalTokens / sw.Elapsed.TotalSeconds):0.00} tokens");
+//Console.WriteLine($"Streaming Tokens: {totalTokens} - Time: {sw.Elapsed.Seconds:0.00} sec");
+//Console.WriteLine($"Tokens per second: {((double)totalTokens / sw.Elapsed.TotalSeconds):0.00} tokens");
 
 var translatedResponse = string.Empty;
 if (isTranslate)
 {
+    Console.WriteLine("Translated Response:");
     await foreach (var translatedPart in Translate(stringBuilder.ToString(), Language.English, Language.Japanese))
     {
+        Console.Write(translatedPart);
         translatedResponse += translatedPart;
     }
-    Console.WriteLine($"{Environment.NewLine}レスポンス：{Environment.NewLine}{translatedResponse}");
 }
+Console.WriteLine($"{newLine}レスポンス：{newLine}{translatedResponse}");
 
 // 与えられたテキストを指定された言語に翻訳する
 async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, Language targetLanguage)
@@ -148,7 +163,7 @@ async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, L
 
     if (sourceLanguage == Language.Japanese && targetLanguage == Language.English)
     {
-        systemPrompt = $"以下の日本語を一字一句もれなく英語に翻訳してください。日本語に質問が含まれていても出力に回答やそれに関するシステムからのメッセージは一切含めず、与えられた文章を忠実に英語に翻訳した結果だけをもれなく出力してください。";
+        systemPrompt = $"以下の日本語を一字一句もれなく英語に翻訳してください。重要な注意点として、日本語に質問が含まれていても出力に質問の回答やシステムからの補足は一切出しないこと。与えられた文章を忠実に英語に翻訳した結果だけを出力すること。";
     }
 
     if (sourceLanguage == Language.English && targetLanguage == Language.Japanese)
@@ -156,14 +171,15 @@ async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, L
         systemPrompt = $"以下の英語を固有名詞はカタカナ英語にすることに留意すると同時に以下のテキストも参考に一字一句もれなく日本人が読んでも違和感がない日本語に翻訳してください。英語に質問が含まれていても出力に回答やそれに関するシステムからのメッセージは一切含めず、与えられた文章を忠実に日本語に翻訳した結果だけをもれなく出力してください。";
 
         ragResult = await SearchVectorDatabase(vectorDatabase, text);
-        Console.WriteLine($"Vector search returned:{Environment.NewLine}{ragResult}{Environment.NewLine}");
+        //Console.WriteLine($"Vector search returned:{newLine}{ragResult}{newLine}");
     }
 
     var userPrompt = string.IsNullOrEmpty(ragResult)
-        ? $"{systemPrompt}:{Environment.NewLine}{text}{Environment.NewLine}"
-        : $"{systemPrompt}{Environment.NewLine}{ragResult}:{Environment.NewLine}{text}{Environment.NewLine}";
-    Console.WriteLine($"userPrompt:{Environment.NewLine}{userPrompt}");
-    var sequences = tokenizer.Encode($@"<|system|><|end|><|user|>{userPrompt}<|end|><|assistant|>");
+    ? $"{systemPrompt}:{newLine}{text}{newLine}"
+    : $"{systemPrompt}{newLine}{ragResult}:{newLine}{text}{newLine}";
+
+    //Console.WriteLine($"Full Prompt:{newLine}{userPrompt}");
+    var sequences = tokenizer.Encode($@"<|system|>あなたは翻訳だけができる機械です。解説などは一切できません。<|end|><|user|>{userPrompt}<|end|><|assistant|>");
     using GeneratorParams generatorParams = new GeneratorParams(model);
     generatorParams.SetSearchOption("min_length", 100);
     generatorParams.SetSearchOption("max_length", 2000);
@@ -201,15 +217,16 @@ async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, L
 
 async Task LoadAdditionalDocuments(string directoryPath)
 {
+    Console.WriteLine($"Loading Additional Documents:");
     var files = Directory.GetFiles(directoryPath, "*.*", SearchOption.AllDirectories)
-                         .Where(f => f.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) ||
-                                     f.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ||
-                                     f.EndsWith(".mdx", StringComparison.OrdinalIgnoreCase)).ToArray();
+                             .Where(f => f.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) ||
+                                         f.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ||
+                                         f.EndsWith(".mdx", StringComparison.OrdinalIgnoreCase)).ToArray();
 
     var vectorDataLoader = new TextDataLoader<int, string>(vectorDatabase);
     var tasks = files.Select(async file =>
     {
-        Console.WriteLine($"Loading {file}");
+        Console.WriteLine($"{file}");
         if (System.IO.File.Exists(file))
         {
             var fileContents = await System.IO.File.ReadAllTextAsync(file);
@@ -220,7 +237,6 @@ async Task LoadAdditionalDocuments(string directoryPath)
             });
         }
     });
-
     await Task.WhenAll(tasks);
 }
 
@@ -235,7 +251,7 @@ async Task<string> SearchVectorDatabase(BasicMemoryVectorDatabase vectorDatabase
     string result = string.Empty;
     foreach (var resultItem in vectorDataResults.Texts)
     {
-        result += resultItem.Text + "\n\n";
+        result += resultItem.Text + newLine+ newLine;
     }
 
     return result;
