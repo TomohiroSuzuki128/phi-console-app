@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Build5Nines.SharpVector" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Direct3D.D3D12" Version="1.716.0-preview" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.1" />
