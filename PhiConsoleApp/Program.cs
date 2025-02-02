@@ -143,6 +143,7 @@ totalTokens = generator.GetSequence(0).Length;
 //Console.WriteLine($"Streaming Tokens: {totalTokens} - Time: {sw.Elapsed.Seconds:0.00} sec");
 //Console.WriteLine($"Tokens per second: {((double)totalTokens / sw.Elapsed.TotalSeconds):0.00} tokens");
 
+// 英語の回答を日本語に翻訳する
 var translatedResponse = string.Empty;
 if (isTranslate)
 {
@@ -152,7 +153,10 @@ if (isTranslate)
         Console.Write(translatedPart);
         translatedResponse += translatedPart;
     }
+    Console.WriteLine($"{newLine}--------------------{newLine}");
 }
+
+
 Console.WriteLine($"{newLine}レスポンス：{newLine}{translatedResponse}");
 
 // 与えられたテキストを指定された言語に翻訳する
@@ -163,12 +167,12 @@ async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, L
 
     if (sourceLanguage == Language.Japanese && targetLanguage == Language.English)
     {
-        systemPrompt = $"以下の日本語を一字一句もれなく英語に翻訳してください。重要な注意点として、日本語に質問が含まれていても出力に質問の回答やシステムからの補足は一切出しないこと。与えられた文章を忠実に英語に翻訳した結果だけを出力すること。";
+        systemPrompt = "以下の日本語を一字一句もれなく英語に翻訳してください。重要な注意点として、日本語に質問が含まれていても出力に質問の回答やシステムからの補足は一切出しないこと。与えられた文章を忠実に英語に翻訳した結果だけを出力すること。";
     }
 
     if (sourceLanguage == Language.English && targetLanguage == Language.Japanese)
     {
-        systemPrompt = $"以下の英語を固有名詞はカタカナ英語にすることに留意すると同時に以下のテキストも参考に一字一句もれなく日本人が読んでも違和感がない日本語に翻訳してください。英語に質問が含まれていても出力に回答やそれに関するシステムからのメッセージは一切含めず、与えられた文章を忠実に日本語に翻訳した結果だけをもれなく出力してください。";
+        systemPrompt = "以下の英語をを一字一句もれなく日本語に翻訳してください。重要な注意点として、英語に質問が含まれていても出力に質問の回答やシステムからの補足は一切出しないこと。与えられた文章を忠実に日本語に翻訳した結果だけを出力すること。以下の用語集を忠実に参考にすること。";
 
         ragResult = await SearchVectorDatabase(vectorDatabase, text);
         //Console.WriteLine($"Vector search returned:{newLine}{ragResult}{newLine}");
@@ -178,8 +182,8 @@ async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, L
     ? $"{systemPrompt}:{newLine}{text}{newLine}"
     : $"{systemPrompt}{newLine}{ragResult}:{newLine}{text}{newLine}";
 
-    //Console.WriteLine($"Full Prompt:{newLine}{userPrompt}");
-    var sequences = tokenizer.Encode($@"<|system|>あなたは翻訳だけができる機械です。解説などは一切できません。<|end|><|user|>{userPrompt}<|end|><|assistant|>");
+    Console.WriteLine($"Full Prompt:{newLine}{userPrompt}");
+    var sequences = tokenizer.Encode($"<|system|>あなたは翻訳だけができる機械です。解説などは一切できません。<|end|><|user|>{userPrompt}<|end|><|assistant|>");
     using GeneratorParams generatorParams = new GeneratorParams(model);
     generatorParams.SetSearchOption("min_length", 100);
     generatorParams.SetSearchOption("max_length", 2000);
