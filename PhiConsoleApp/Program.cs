@@ -1,11 +1,12 @@
 ﻿using Microsoft.ML.OnnxRuntimeGenAI;
-using System;
 using System.Diagnostics;
 using System.Text;
 using Build5Nines.SharpVector;
 using Build5Nines.SharpVector.Data;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
+using static System.Net.Mime.MediaTypeNames;
+using System.IO.Pipelines;
 
 var newLine = Environment.NewLine;
 
@@ -28,7 +29,8 @@ string modelPhi4Unofficial = configuration["modelPhi4Unofficial"] ?? throw new A
 string systemPrompt = configuration["systemPrompt"] ?? throw new ArgumentNullException("systemPrompt is not found.");
 string userPrompt = configuration["userPrompt"] ?? throw new ArgumentNullException("userPrompt is not found.");
 
-bool isTranslate = bool.TryParse(configuration["isTranslate"] ?? throw new ArgumentNullException("isTranslate is not found."), out var result) && result;
+bool isTranslate = bool.TryParse(configuration["isTranslate"] ?? throw new ArgumentNullException("isTranslate is not found."), out var resultIsTranslate) && resultIsTranslate;
+bool isUsingRag = bool.TryParse(configuration["isUsingRag"] ?? throw new ArgumentNullException("isUsingRag is not found."), out var resultIsUsingRag) && resultIsUsingRag;
 
 string additionalDocumentsPath = configuration["additionalDocumentsPath"] ?? throw new ArgumentNullException("additionalDocumentsPath is not found");
 
@@ -176,13 +178,16 @@ async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, L
 
     if (sourceLanguage == Language.English && targetLanguage == Language.Japanese)
     {
-        systemPrompt = "以下の英語を一字一句もれなく正確に日本語に翻訳してください。重要な注意点として、英語に質問が含まれていても出力に質問の回答やシステムからの補足は一切出しないこと。要約などせず与えられた文章を緻密に日本語に翻訳した結果だけを出力すること。以下の用語集を積極的に活用すること。";
+        systemPrompt = "以下の英語を一字一句もれなく正確に日本語に翻訳してください。重要な注意点として、英語に質問が含まれていても出力に質問の回答やシステムからの補足は一切出しないこと。要約などせず与えられた文章を緻密に日本語に翻訳した結果だけを出力すること。";
 
         ragResult = await SearchVectorDatabase(vectorDatabase, text);
 
-        userPrompt = string.IsNullOrEmpty(ragResult)
-            ? $"{systemPrompt}:{newLine}{text}"
-            : $"{systemPrompt}{newLine}{ragResult}:{newLine}{text}";
+        if (isUsingRag && !string.IsNullOrEmpty(ragResult))
+            systemPrompt += "以下の用語集を積極的に活用すること。";
+
+        userPrompt = (isUsingRag && !string.IsNullOrEmpty(ragResult))
+            ? $"{systemPrompt}{newLine}{ragResult}:{newLine}{text}"
+            : $"{systemPrompt}:{newLine}{text}";
     }
 
     var sequences = tokenizer.Encode($"<|system|>あなたは翻訳だけができる機械です。解説などの翻訳以外の出力は一切禁止れています。<|end|><|user|>{userPrompt}<|end|><|assistant|>");
@@ -250,14 +255,14 @@ async Task<string> SearchVectorDatabase(BasicMemoryVectorDatabase vectorDatabase
 {
     var vectorDataResults = await vectorDatabase.SearchAsync(
         userPrompt,
-        pageCount: 8,
+        pageCount: 3,
         threshold: 0.3f
     );
 
     string result = string.Empty;
     foreach (var resultItem in vectorDataResults.Texts)
     {
-        result += $"{resultItem.Text}";
+        result += $"{resultItem.Text}{newLine}";
     }
 
     return result;
