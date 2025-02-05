@@ -238,7 +238,7 @@ async Task LoadAdditionalDocuments(string directoryPath)
             var fileContents = await System.IO.File.ReadAllTextAsync(file);
             await vectorDataLoader.AddDocumentAsync(fileContents, new TextChunkingOptions<string>
             {
-                Method = TextChunkingMethod.Sentence,
+                Method = TextChunkingMethod.Paragraph,
                 RetrieveMetadata = (chunk) => file
             });
         }
