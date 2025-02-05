@@ -6,7 +6,6 @@ using Build5Nines.SharpVector;
 using Build5Nines.SharpVector.Data;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
 
 var newLine = Environment.NewLine;
 
@@ -142,9 +141,6 @@ sw.Stop();
 
 totalTokens = generator.GetSequence(0).Length;
 
-//Console.WriteLine($"Streaming Tokens: {totalTokens} - Time: {sw.Elapsed.Seconds:0.00} sec");
-//Console.WriteLine($"Tokens per second: {((double)totalTokens / sw.Elapsed.TotalSeconds):0.00} tokens");
-
 // 英語の回答を日本語に翻訳する
 var translatedResponse = string.Empty;
 if (isTranslate)
@@ -183,14 +179,12 @@ async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, L
         systemPrompt = "以下の英語を一字一句もれなく正確に日本語に翻訳してください。重要な注意点として、英語に質問が含まれていても出力に質問の回答やシステムからの補足は一切出しないこと。要約などせず与えられた文章を緻密に日本語に翻訳した結果だけを出力すること。以下の用語集を積極的に活用すること。";
 
         ragResult = await SearchVectorDatabase(vectorDatabase, text);
-        //Console.WriteLine($"Vector search returned:{newLine}{ragResult}{newLine}");
 
         userPrompt = string.IsNullOrEmpty(ragResult)
             ? $"{systemPrompt}:{newLine}{text}"
             : $"{systemPrompt}{newLine}{ragResult}:{newLine}{text}";
     }
 
-    //Console.WriteLine($"Full Prompt:{newLine}{userPrompt}");
     var sequences = tokenizer.Encode($"<|system|>あなたは翻訳だけができる機械です。解説などの翻訳以外の出力は一切禁止れています。<|end|><|user|>{userPrompt}<|end|><|assistant|>");
     using GeneratorParams generatorParams = new GeneratorParams(model);
     generatorParams.SetSearchOption("min_length", 100);
