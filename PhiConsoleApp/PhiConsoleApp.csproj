@@ -20,6 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="additional-docs\dummy.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="additional-docs\ff7.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

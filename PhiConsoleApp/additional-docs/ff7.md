@@ -1,5 +1,4 @@
 ﻿# Final Fantasy VII 用語集
-## 登場人物
  - Cloud Strife クラウド・ストライフ
  - Barret Wallace バレット・ウォーレス
  - Barret バレット
@@ -8,8 +7,6 @@
  - Aerith Gainsborough エアリス・ゲインズブール
  - Aerith エアリス
  - Sephiroth セフィロス
-
-## その他の用語
  - Final Fantasy VII ファイナルファンタジーVII
  - Shinra Electric Power Company 神羅カンパニー
  - Shinra 神羅
