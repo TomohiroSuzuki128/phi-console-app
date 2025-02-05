@@ -257,7 +257,7 @@ async Task<string> SearchVectorDatabase(BasicMemoryVectorDatabase vectorDatabase
     string result = string.Empty;
     foreach (var resultItem in vectorDataResults.Texts)
     {
-        result += resultItem.Text + newLine+ newLine;
+        result += $"{resultItem.Text}";
     }
 
     return result;
