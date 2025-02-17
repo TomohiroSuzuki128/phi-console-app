@@ -170,7 +170,7 @@ async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, L
 
     if (sourceLanguage == Language.Japanese && targetLanguage == Language.English)
     {
-        instructionPrompt = "You can speak English only. Do not speak any Japanese.";
+        instructionPrompt = "You can output English only. Do not output any Japanese.";
 
         systemPrompt = "Please translate the following Japanese into English. (Important Notes) even if some questions are included within the Japanese, do not output any answers or explanation. do not output any supplements from the system.";
 
