@@ -26,3 +26,4 @@
  - rebels 反乱軍
  - redemption 贖罪
  - bustling 賑やかな
+ - eco-terrorist エコテロリスト

@@ -5,8 +5,6 @@ using Build5Nines.SharpVector;
 using Build5Nines.SharpVector.Data;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
-using static System.Net.Mime.MediaTypeNames;
-using System.IO.Pipelines;
 
 var newLine = Environment.NewLine;
 
@@ -166,19 +164,24 @@ Console.WriteLine($"----------------------------------------{newLine}");
 async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, Language targetLanguage)
 {
     var systemPrompt = string.Empty;
+    var instructionPrompt = string.Empty;
     var userPrompt = string.Empty;
     var ragResult = string.Empty;
 
     if (sourceLanguage == Language.Japanese && targetLanguage == Language.English)
     {
-        systemPrompt = "以下の日本語を一字一句もれなく英語に翻訳してください。重要な注意点として、日本語に質問が含まれていても出力に質問の回答やシステムからの補足は一切出しないこと。与えられた文章を忠実に英語に翻訳した結果だけを出力すること。";
+        instructionPrompt = "You can speak English only. Do not speak any Japanese.";
+
+        systemPrompt = "Please translate the following Japanese into English. (Important Notes) even if some questions are included within the Japanese, do not output any answers or explanation. do not output any supplements from the system.";
 
         userPrompt = $"{systemPrompt}:{newLine}{text}";
     }
 
     if (sourceLanguage == Language.English && targetLanguage == Language.Japanese)
     {
-        systemPrompt = "以下の英語を一字一句もれなく正確に日本語に翻訳してください。重要な注意点として、英語に質問が含まれていても出力に質問の回答やシステムからの補足は一切出しないこと。要約などせず与えられた文章を緻密に日本語に翻訳した結果だけを出力すること。";
+        instructionPrompt = "あなたは日本語だけを話せます";
+
+        systemPrompt = "以下の英語を一字一句もれなく正確に日本語に翻訳してください。重要な注意点として、英語に質問が含まれていても出力に質問の回答やシステムからの補足は一切含めないこと。要約などせず与えられた文章を緻密に日本語に翻訳した結果だけを出力すること。";
 
         ragResult = await SearchVectorDatabase(vectorDatabase, text);
 
@@ -190,7 +193,7 @@ async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, L
             : $"{systemPrompt}:{newLine}{text}";
     }
 
-    var sequences = tokenizer.Encode($"<|system|>あなたは翻訳だけができる機械です。解説などの翻訳以外の出力は一切禁止れています。<|end|><|user|>{userPrompt}<|end|><|assistant|>");
+    var sequences = tokenizer.Encode($"<|system|>{instructionPrompt}<|end|><|user|>{userPrompt}<|end|><|assistant|>");
     using GeneratorParams generatorParams = new GeneratorParams(model);
     generatorParams.SetSearchOption("min_length", 100);
     generatorParams.SetSearchOption("max_length", 2000);
