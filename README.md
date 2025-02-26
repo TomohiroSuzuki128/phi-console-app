@@ -52,3 +52,7 @@ md, txt で付加情報を与えることでで RAG に対応しています。�
   "additionalDocumentsPath": "<Your documents path>" // RAG 用ファイルの Path
 }
 ```
+
+## モデルのダウンロード
+Hugging Face からダウンロードします。
+コマンドについては付属の download_model_cmd.txt を参考にしてください
