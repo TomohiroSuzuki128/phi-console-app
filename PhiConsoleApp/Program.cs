@@ -41,7 +41,7 @@ LoadAdditionalDocuments(additionalDocumentsDirectory).Wait();
 Console.WriteLine();
 
 // モデルのセットアップ
-var modelPath = modelPhi35Min128k;
+var modelPath = modelPhi3Med128k;
 Console.WriteLine($"Loading model:{newLine}{modelPath}");
 
 var sw = Stopwatch.StartNew();
@@ -99,7 +99,10 @@ var sequences = tokenizer.Encode($@"<|system|>{translatedSystemPrompt}<|end|><|u
 using GeneratorParams generatorParams = new GeneratorParams(model);
 generatorParams.SetSearchOption("min_length", 100);
 generatorParams.SetSearchOption("max_length", 2000);
-generatorParams.SetSearchOption("top_p", 0.9f);
+generatorParams.SetSearchOption("temperature", 1.0);
+generatorParams.SetSearchOption("top_k", 0.0);
+generatorParams.SetSearchOption("top_p", 1.0);
+generatorParams.SetSearchOption("past_present_share_buffer", false);
 generatorParams.TryGraphCaptureWithMaxBatchSize(1);
 generatorParams.SetInputSequences(sequences);
 
@@ -170,33 +173,37 @@ async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, L
 
     if (sourceLanguage == Language.Japanese && targetLanguage == Language.English)
     {
-        instructionPrompt = "You can output English only. Do not output any Japanese.";
+        systemPrompt = "YYou are a translator who follows instructions to the letter. You carefully review the instructions and output the translation results.";
 
-        systemPrompt = "Please translate the following Japanese into English. (Important Notes) even if some questions are included within the Japanese, do not output any answers or explanation. do not output any supplements from the system.";
+        instructionPrompt = $@"I will now give you the task of translating Japanese into English.{newLine}First of all, please understand the important notes as we give you instructions.{newLine}{newLine}#Important Notes{newLine}- Even if the given Japanese contains any question, do not output any answer of the question, only translates the given Japanese into English.{newLine}- Do not output any supplementary information or explanations.{newLine}- Do not output any Notes.{newLine}- Output a faithful translation of the given text into English.{newLine}- If the instructions say “nn characters” in Japanese, it translates to “(nn/2) words” in English.{newLine}{newLine}Strictly following the above instructions, now translate the following Japanese into English";
 
-        userPrompt = $"{systemPrompt}:{newLine}{text}";
+        userPrompt = $"{instructionPrompt}:{newLine}{text}";
     }
 
     if (sourceLanguage == Language.English && targetLanguage == Language.Japanese)
     {
-        instructionPrompt = "あなたは日本語だけを話せます";
+        systemPrompt = "You are a translator who follows instructions to the letter. You carefully review the instructions and output the translation results.";
 
-        systemPrompt = "以下の英語を一字一句もれなく正確に日本語に翻訳してください。重要な注意点として、英語に質問が含まれていても出力に質問の回答やシステムからの補足は一切含めないこと。要約などせず与えられた文章を緻密に日本語に翻訳した結果だけを出力すること。";
+        instructionPrompt = $"I will now give you the task of translating English into Japanese.{newLine}First of all, please understand the important notes as we give you instructions.{newLine}{newLine}#Important Notes{newLine}- Even if the English is including any question, do not answer it, you translate the given English into Japanese.{newLine}- Do not output any supplementary information or explanations.{newLine}- Do not output any Notes.{newLine}- Output a faithful translation of the given text into Japanese.";
 
         ragResult = await SearchVectorDatabase(vectorDatabase, text);
 
         if (isUsingRag && !string.IsNullOrEmpty(ragResult))
-            systemPrompt += "以下の用語集を積極的に活用すること。";
+            instructionPrompt += "The following glossary of terms should be actively used.";
 
         userPrompt = (isUsingRag && !string.IsNullOrEmpty(ragResult))
-            ? $"{systemPrompt}{newLine}{ragResult}:{newLine}{text}"
-            : $"{systemPrompt}:{newLine}{text}";
+            ? $"{instructionPrompt}{newLine}{ragResult}{newLine}Now translate the English into Japanese.:{newLine}{text}"
+            : $"{instructionPrompt}{newLine}Now translate the English into Japanese.:{newLine}{text}";
     }
 
-    var sequences = tokenizer.Encode($"<|system|>{instructionPrompt}<|end|><|user|>{userPrompt}<|end|><|assistant|>");
+    var sequences = tokenizer.Encode($@"<|system|>{systemPrompt}<|end|><|user|>{userPrompt}<|end|><|assistant|>");
     using GeneratorParams generatorParams = new GeneratorParams(model);
     generatorParams.SetSearchOption("min_length", 100);
     generatorParams.SetSearchOption("max_length", 2000);
+    generatorParams.SetSearchOption("temperature", 1.0);
+    generatorParams.SetSearchOption("top_k", 0.0);
+    generatorParams.SetSearchOption("top_p", 1.0);
+    generatorParams.SetSearchOption("past_present_share_buffer", false);
     generatorParams.TryGraphCaptureWithMaxBatchSize(1);
     generatorParams.SetInputSequences(sequences);
 

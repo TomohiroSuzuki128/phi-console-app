@@ -27,3 +27,4 @@
  - redemption 贖罪
  - bustling 賑やかな
  - eco-terrorist エコテロリスト
+ - antagonist 敵対者
