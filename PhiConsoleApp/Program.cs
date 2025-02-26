@@ -17,18 +17,9 @@ builder.Configuration
 
 var configuration = builder.Configuration;
 
-string modelPhi35Min128k = configuration["modelPhi35Min128k"] ?? throw new ArgumentNullException("modelPhi35Min128k is not found.");
-string modelPhi3Med4k = configuration["modelPhi3Med4k"] ?? throw new ArgumentNullException("modelPhi3Med4k is not found.");
-string modelPhi3Med128k = configuration["modelPhi3Med128k"] ?? throw new ArgumentNullException("modelPhi3Med128k is not found.");
-string modelPhi3Min4k = configuration["modelPhi3Min4k"] ?? throw new ArgumentNullException("modelPhi3Min4k is not found.");
-string modelPhi3Min128k = configuration["modelPhi3Min128k"] ?? throw new ArgumentNullException("modelPhi3Min128k is not found.");
-string modelPhi4Unofficial = configuration["modelPhi4Unofficial"] ?? throw new ArgumentNullException("modelPhi4Unofficial is not found.");
-
-string systemPrompt = configuration["systemPrompt"] ?? throw new ArgumentNullException("systemPrompt is not found.");
-string userPrompt = configuration["userPrompt"] ?? throw new ArgumentNullException("userPrompt is not found.");
-
-bool isTranslate = bool.TryParse(configuration["isTranslate"] ?? throw new ArgumentNullException("isTranslate is not found."), out var resultIsTranslate) && resultIsTranslate;
-bool isUsingRag = bool.TryParse(configuration["isUsingRag"] ?? throw new ArgumentNullException("isUsingRag is not found."), out var resultIsUsingRag) && resultIsUsingRag;
+var modelPath = new ModelPath(builder);
+var prompt = new Prompt(builder);
+var option = new Option(builder);
 
 string additionalDocumentsPath = configuration["additionalDocumentsPath"] ?? throw new ArgumentNullException("additionalDocumentsPath is not found");
 
@@ -41,28 +32,27 @@ LoadAdditionalDocuments(additionalDocumentsDirectory).Wait();
 Console.WriteLine();
 
 // モデルのセットアップ
-var modelPath = modelPhi3Med128k;
-Console.WriteLine($"Loading model:{newLine}{modelPath}");
+Console.WriteLine($"Loading model:{newLine}{modelPath.Phi3Med128k}");
 
 var sw = Stopwatch.StartNew();
-using Model model = new Model(modelPath);
+using Model model = new Model(modelPath.Phi3Med128k);
 using Tokenizer tokenizer = new Tokenizer(model);
 sw.Stop();
-
+ 
 Console.WriteLine($"{newLine}Model loading time is {sw.Elapsed.Seconds:0.00} sec.\n");
 
 // 翻訳するかどうか
-Console.WriteLine($"翻訳する：{newLine}{isTranslate}");
+Console.WriteLine($"翻訳する：{newLine}{option.IsTranslate}");
 
 // プロンプトのセットアップ
-Console.WriteLine($"{newLine}システムプロンプト：{newLine}{systemPrompt}");
-Console.WriteLine($"{newLine}ユーザープロンプト：{newLine}{userPrompt}{newLine}");
+Console.WriteLine($"{newLine}システムプロンプト：{newLine}{prompt.System}");
+Console.WriteLine($"{newLine}ユーザープロンプト：{newLine}{prompt.User}{newLine}");
 
 var translatedSystemPrompt = string.Empty;
-if (isTranslate)
+if (option.IsTranslate)
 {
     Console.WriteLine("Translated System Prompt:");
-    await foreach (var translatedPart in Translate(systemPrompt, Language.Japanese, Language.English))
+    await foreach (var translatedPart in Translate(prompt.System, Language.Japanese, Language.English))
     {
         Console.Write(translatedPart);
         translatedSystemPrompt += translatedPart;
@@ -71,14 +61,14 @@ if (isTranslate)
 }
 else
 {
-    translatedSystemPrompt = systemPrompt;
+    translatedSystemPrompt = prompt.System;
 }
 
 var translatedUserPrompt = string.Empty;
-if (isTranslate)
+if (option.IsTranslate)
 {
     Console.WriteLine("Translated User Prompt:");
-    await foreach (var translatedPart in Translate(userPrompt, Language.Japanese, Language.English))
+    await foreach (var translatedPart in Translate(prompt.User, Language.Japanese, Language.English))
     {
         Console.Write(translatedPart);
         translatedUserPrompt += translatedPart;
@@ -87,7 +77,7 @@ if (isTranslate)
 }
 else
 {
-    translatedUserPrompt = userPrompt;
+    translatedUserPrompt = prompt.User;
 }
 
 Console.WriteLine($"{newLine}システムプロンプト：{newLine}{translatedSystemPrompt}");
@@ -146,7 +136,7 @@ totalTokens = generator.GetSequence(0).Length;
 
 // 英語の回答を日本語に翻訳する
 var translatedResponse = string.Empty;
-if (isTranslate)
+if (option.IsTranslate)
 {
     Console.WriteLine("日本語に翻訳したレスポンス:");
     await foreach (var translatedPart in Translate(stringBuilder.ToString(), Language.English, Language.Japanese))
@@ -188,12 +178,12 @@ async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, L
 
         ragResult = await SearchVectorDatabase(vectorDatabase, text);
 
-        if (isUsingRag && !string.IsNullOrEmpty(ragResult))
+        if (option.IsUsingRag && !string.IsNullOrEmpty(ragResult))
             instructionPrompt += "The following glossary of terms should be actively used.";
 
-        userPrompt = (isUsingRag && !string.IsNullOrEmpty(ragResult))
-            ? $"{instructionPrompt}{newLine}{ragResult}{newLine}Now translate the English into Japanese.:{newLine}{text}"
-            : $"{instructionPrompt}{newLine}Now translate the English into Japanese.:{newLine}{text}";
+        userPrompt = (option.IsUsingRag && !string.IsNullOrEmpty(ragResult))
+            ? $"{instructionPrompt}{newLine}{ragResult}{newLine}Strictly following the above instructions, now translate the English into Japanese:{newLine}{text}"
+            : $"{instructionPrompt}{newLine}Strictly following the above instructions, now translate the English into Japanese:{newLine}{text}";
     }
 
     var sequences = tokenizer.Encode($@"<|system|>{systemPrompt}<|end|><|user|>{userPrompt}<|end|><|assistant|>");
@@ -276,6 +266,68 @@ async Task<string> SearchVectorDatabase(BasicMemoryVectorDatabase vectorDatabase
     }
 
     return result;
+}
+
+public sealed class ModelPath
+{
+    private readonly string modelPhi35Min128k;
+    private readonly string modelPhi3Med4k;
+    private readonly string modelPhi3Med128k;
+    private readonly string modelPhi3Min4k;
+    private readonly string modelPhi3Min128k;
+    private readonly string modelPhi4Unofficial;
+
+    public ModelPath(HostApplicationBuilder builder)
+    {
+        var configuration = builder.Configuration;
+
+        modelPhi35Min128k = configuration["modelPhi35Min128k"] ?? throw new ArgumentNullException("modelPhi35Min128k is not found.");
+        modelPhi3Med4k = configuration["modelPhi3Med4k"] ?? throw new ArgumentNullException("modelPhi3Med4k is not found.");
+        modelPhi3Med128k = configuration["modelPhi3Med128k"] ?? throw new ArgumentNullException("modelPhi3Med128k is not found.");
+        modelPhi3Min4k = configuration["modelPhi3Min4k"] ?? throw new ArgumentNullException("modelPhi3Min4k is not found.");
+        modelPhi3Min128k = configuration["modelPhi3Min128k"] ?? throw new ArgumentNullException("modelPhi3Min128k is not found.");
+        modelPhi4Unofficial = configuration["modelPhi4Unofficial"] ?? throw new ArgumentNullException("modelPhi4Unofficial is not found.");
+    }
+
+    public string Phi35Min128k { get => modelPhi35Min128k; }
+    public string Phi3Med4k { get => modelPhi3Med4k; }
+    public string Phi3Med128k { get => modelPhi3Med128k; }
+    public string Phi3Min4k { get => modelPhi3Min4k; }
+    public string Phi3Min128k { get => modelPhi3Min128k; }
+    public string Phi4Unofficial { get => modelPhi4Unofficial; }
+}
+
+public sealed class Prompt
+{
+    private readonly string systemPrompt;
+    private readonly string userPrompt;
+
+    public Prompt(HostApplicationBuilder builder)
+    {
+        var configuration = builder.Configuration;
+
+        systemPrompt = configuration["systemPrompt"] ?? throw new ArgumentNullException("systemPrompt is not found.");
+        userPrompt = configuration["userPrompt"] ?? throw new ArgumentNullException("userPrompt is not found.");
+    }
+
+    public string System { get => systemPrompt; }
+    public string User { get => userPrompt; }
+}
+
+public sealed class Option
+{
+    private readonly bool isTranslate;
+    private readonly bool isUsingRag;
+
+    public Option(HostApplicationBuilder builder)
+    {
+        var configuration = builder.Configuration;
+        isTranslate = bool.TryParse(configuration["isTranslate"] ?? throw new ArgumentNullException("isTranslate is not found."), out var resultIsTranslate) && resultIsTranslate;
+        isUsingRag = bool.TryParse(configuration["isUsingRag"] ?? throw new ArgumentNullException("isUsingRag is not found."), out var resultIsUsingRag) && resultIsUsingRag;
+    }
+
+    public bool IsTranslate { get => isTranslate; }
+    public bool IsUsingRag { get => isUsingRag; }
 }
 
 public enum Language
