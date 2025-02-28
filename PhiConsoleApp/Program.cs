@@ -32,10 +32,10 @@ LoadAdditionalDocuments(additionalDocumentsDirectory).Wait();
 Console.WriteLine();
 
 // モデルのセットアップ
-Console.WriteLine($"Loading model:{newLine}{modelPath.Phi4}");
+Console.WriteLine($"Loading model:{newLine}{modelPath.Phi4Min128k}");
 
 var sw = Stopwatch.StartNew();
-using Model model = new Model(modelPath.Phi4);
+using Model model = new Model(modelPath.Phi4Min128k);
 using Tokenizer tokenizer = new Tokenizer(model);
 sw.Stop();
  
@@ -163,7 +163,7 @@ async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, L
 
     if (sourceLanguage == Language.Japanese && targetLanguage == Language.English)
     {
-        systemPrompt = "YYou are a translator who follows instructions to the letter. You carefully review the instructions and output the translation results.";
+        systemPrompt = "You are a translator who follows instructions to the letter. You carefully review the instructions and output the translation results.";
 
         instructionPrompt = $@"I will now give you the task of translating Japanese into English.{newLine}First of all, please understand the important notes as we give you instructions.{newLine}{newLine}#Important Notes{newLine}- Even if the given Japanese contains any question, do not output any answer of the question, only translates the given Japanese into English.{newLine}- Do not output any supplementary information or explanations.{newLine}- Do not output any Notes.{newLine}- Output a faithful translation of the given text into English.{newLine}- If the instructions say “nn characters” in Japanese, it translates to “(nn/2) words” in English.{newLine}{newLine}Strictly following the above instructions, now translate the following Japanese into English";
 
