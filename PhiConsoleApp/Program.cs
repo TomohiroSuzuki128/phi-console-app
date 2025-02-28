@@ -32,10 +32,10 @@ LoadAdditionalDocuments(additionalDocumentsDirectory).Wait();
 Console.WriteLine();
 
 // モデルのセットアップ
-Console.WriteLine($"Loading model:{newLine}{modelPath.Phi3Med128k}");
+Console.WriteLine($"Loading model:{newLine}{modelPath.Phi4}");
 
 var sw = Stopwatch.StartNew();
-using Model model = new Model(modelPath.Phi3Med128k);
+using Model model = new Model(modelPath.Phi4);
 using Tokenizer tokenizer = new Tokenizer(model);
 sw.Stop();
  
@@ -275,7 +275,8 @@ public sealed class ModelPath
     private readonly string modelPhi3Med128k;
     private readonly string modelPhi3Min4k;
     private readonly string modelPhi3Min128k;
-    private readonly string modelPhi4Unofficial;
+    private readonly string modelPhi4;
+    private readonly string modelPhi4Min128k;
 
     public ModelPath(HostApplicationBuilder builder)
     {
@@ -286,7 +287,8 @@ public sealed class ModelPath
         modelPhi3Med128k = configuration["modelPhi3Med128k"] ?? throw new ArgumentNullException("modelPhi3Med128k is not found.");
         modelPhi3Min4k = configuration["modelPhi3Min4k"] ?? throw new ArgumentNullException("modelPhi3Min4k is not found.");
         modelPhi3Min128k = configuration["modelPhi3Min128k"] ?? throw new ArgumentNullException("modelPhi3Min128k is not found.");
-        modelPhi4Unofficial = configuration["modelPhi4Unofficial"] ?? throw new ArgumentNullException("modelPhi4Unofficial is not found.");
+        modelPhi4 = configuration["modelPhi4"] ?? throw new ArgumentNullException("modelPhi4 is not found.");
+        modelPhi4Min128k = configuration["modelPhi4Min128k"] ?? throw new ArgumentNullException("modelPhi4Min128k is not found.");
     }
 
     public string Phi35Min128k { get => modelPhi35Min128k; }
@@ -294,7 +296,8 @@ public sealed class ModelPath
     public string Phi3Med128k { get => modelPhi3Med128k; }
     public string Phi3Min4k { get => modelPhi3Min4k; }
     public string Phi3Min128k { get => modelPhi3Min128k; }
-    public string Phi4Unofficial { get => modelPhi4Unofficial; }
+    public string Phi4 { get => modelPhi4; }
+    public string Phi4Min128k { get => modelPhi4Min128k; }
 }
 
 public sealed class Prompt
