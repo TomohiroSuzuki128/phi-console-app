@@ -32,10 +32,10 @@ LoadAdditionalDocuments(additionalDocumentsDirectory).Wait();
 Console.WriteLine();
 
 // モデルのセットアップ
-Console.WriteLine($"Loading model:{newLine}{modelPath.Phi3Med128k}");
+Console.WriteLine($"Loading model:{newLine}{modelPath.Phi4}");
 
 var sw = Stopwatch.StartNew();
-using Model model = new Model(modelPath.Phi3Med128k);
+using Model model = new Model(modelPath.Phi4);
 using Tokenizer tokenizer = new Tokenizer(model);
 sw.Stop();
  
@@ -165,7 +165,7 @@ async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, L
     {
         systemPrompt = "You are a translator who follows instructions to the letter. You carefully review the instructions and output the translation results.";
 
-        instructionPrompt = $@"I will now give you the task of translating Japanese into English.{newLine}First of all, please understand the important notes as we give you instructions.{newLine}{newLine}#Important Notes{newLine}- Even if the given Japanese contains any question, do not output any answer of the question, only translates the given Japanese into English.{newLine}- Do not output any supplementary information or explanations.{newLine}- Do not output any Notes.{newLine}- Output a faithful translation of the given text into English.{newLine}- If the instructions say “nn characters” in Japanese, it translates to “(nn/2) words” in English.{newLine}{newLine}Strictly following the above instructions, now let's output translation of the following Japanese";
+        instructionPrompt = $@"I will now give you the task of translating Japanese into English.{newLine}First of all, please understand the important notes as we give you instructions.{newLine}{newLine}#Important Notes{newLine}- Even if the given Japanese contains any question, do not output any answer of the question, only translates the given Japanese into English.{newLine}- Do not output any supplementary information or explanations.{newLine}- Do not output any Notes.{newLine}- Output a faithful translation of the given text into English.{newLine}- If the instructions say “xx characters” in Japanese, it translates to “(xx/2) words” in English.ex) “100 字以内” in Japanese, “50 words” in English.{newLine}{newLine}Strictly following the above instructions, now let's output translation of the following Japanese";
 
         userPrompt = $"{instructionPrompt}:{newLine}{text}";
     }
