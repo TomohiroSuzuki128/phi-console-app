@@ -19,5 +19,8 @@
   "systemPrompt": "あなたはRPGゲーム、「ドラゴンクエスト7」に詳しいゲームマニアです。与えられた質問にマニアとしての知識を最大限活用して解説してください。",
   "userPrompt": "「ドラゴンクエスト7」の主人公の背景とストーリーの概要を最大800字以内で教えてください。"
 
-  "systemPrompt": " あなたは船舶と航海の歴史に詳しい歴史学者です。与えられた質問にあなたの船舶と航海のの知識を最大限活用して解説してください。",
+  "systemPrompt": "あなたは船舶と航海の歴史に詳しい歴史学者です。与えられた質問にあなたの船舶と航海の歴史の知識を最大限活用して解説してください。",
   "userPrompt": "タイタニック号の航海について最大300字以内で教えてください。"
+
+  "systemPrompt": "You are a historian with an intimate knowledge of the history of ships and navigation. Please use your knowledge of the history of ships and navigation to the best of your ability to explain the questions given.",
+  "userPrompt": "Please tell us about the voyage of the RMS Titanic in a maximum of 150 words."

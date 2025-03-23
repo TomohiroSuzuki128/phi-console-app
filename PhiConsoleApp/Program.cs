@@ -32,10 +32,10 @@ LoadAdditionalDocuments(additionalDocumentsDirectory).Wait();
 Console.WriteLine();
 
 // モデルのセットアップ
-Console.WriteLine($"Loading model:{newLine}{modelPath.Phi4}");
+Console.WriteLine($"Loading model:{newLine}{modelPath.Phi35Min128k}");
 
 var sw = Stopwatch.StartNew();
-using Model model = new Model(modelPath.Phi4);
+using Model model = new Model(modelPath.Phi35Min128k);
 using Tokenizer tokenizer = new Tokenizer(model);
 sw.Stop();
  
@@ -43,6 +43,8 @@ Console.WriteLine($"{newLine}Model loading time is {sw.Elapsed.Seconds:0.00} sec
 
 // 翻訳するかどうか
 Console.WriteLine($"翻訳する：{newLine}{option.IsTranslate}");
+// RAG を使うかどうか
+Console.WriteLine($"RAG を使う：{newLine}{option.IsUsingRag}");
 
 // プロンプトのセットアップ
 Console.WriteLine($"{newLine}システムプロンプト：{newLine}{prompt.System}");
@@ -89,9 +91,9 @@ var sequences = tokenizer.Encode($@"<|system|>{translatedSystemPrompt}<|end|><|u
 using GeneratorParams generatorParams = new GeneratorParams(model);
 generatorParams.SetSearchOption("min_length", 100);
 generatorParams.SetSearchOption("max_length", 2000);
-generatorParams.SetSearchOption("temperature", 1.0);
-generatorParams.SetSearchOption("top_k", 0.0);
-generatorParams.SetSearchOption("top_p", 1.0);
+//generatorParams.SetSearchOption("temperature", 1.0);
+//generatorParams.SetSearchOption("top_k", 0.0);
+//generatorParams.SetSearchOption("top_p", 1.0);
 generatorParams.SetSearchOption("past_present_share_buffer", false);
 generatorParams.TryGraphCaptureWithMaxBatchSize(1);
 generatorParams.SetInputSequences(sequences);
@@ -179,7 +181,7 @@ async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, L
         ragResult = await SearchVectorDatabase(vectorDatabase, text);
 
         if (option.IsUsingRag && !string.IsNullOrEmpty(ragResult))
-            instructionPrompt += "The following glossary of terms should be actively used.";
+            instructionPrompt += $"{newLine}- The following glossary of terms should be actively used.";
 
         userPrompt = (option.IsUsingRag && !string.IsNullOrEmpty(ragResult))
             ? $"{instructionPrompt}{newLine}{ragResult}{newLine}Strictly following the above instructions, now translate the English into Japanese:{newLine}{text}"
@@ -190,9 +192,6 @@ async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, L
     using GeneratorParams generatorParams = new GeneratorParams(model);
     generatorParams.SetSearchOption("min_length", 100);
     generatorParams.SetSearchOption("max_length", 2000);
-    generatorParams.SetSearchOption("temperature", 1.0);
-    generatorParams.SetSearchOption("top_k", 0.0);
-    generatorParams.SetSearchOption("top_p", 1.0);
     generatorParams.SetSearchOption("past_present_share_buffer", false);
     generatorParams.TryGraphCaptureWithMaxBatchSize(1);
     generatorParams.SetInputSequences(sequences);
