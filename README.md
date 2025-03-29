@@ -9,9 +9,9 @@ Phi モデルをローカルで検証できるコンソールアプリのサン�
 
 ## 目的
 
-- Phi3, Phi3.5 をローカル CPU で動かす検証の用途
-- Phi3, Phi3.5 でエッジ AI アプリを作る前に Phi3, Phi3.5 で求めている精度が出るか確認できる
-- Phi3, Phi3.5 でエッジ AI とりあえず遊んでみる
+- Phi3, Phi3.5, Phi4 をローカル CPU で動かす検証の用途
+- Phi3, Phi3.5, Phi4 でエッジ AI アプリを作る前に Phi3, Phi3.5 で求めている精度が出るか確認できる
+- Phi3, Phi3.5, Phi4 でエッジ AI とりあえず遊んでみる
 
 ## 特長
 
@@ -48,7 +48,8 @@ md, txt で付加情報を与えることでで RAG に対応しています。�
   "modelPhi3Med128k": "<Your model path>",
   "modelPhi3Min4k": "<Your model path>",
   "modelPhi3Min128k": "<Your model path>",
-  "modelPhi4Unofficial": "<Your model path>",
+  "modelPhi4": "<Your model path>",
+  "modelPhi4Min128k": "<Your model path>",
   "isTranslate": "<true or false>",
   "isUsingRag": "<true or false>",
   "systemPrompt": "<Your system prompt>",
