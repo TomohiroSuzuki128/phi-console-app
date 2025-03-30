@@ -1,4 +1,6 @@
 # PhiConsoleApp
+![](images/flow-diagram.png)
+
 Phi モデルをローカルで検証できるコンソールアプリのサンプルです。
 - ライブラリは ONNX です
 - C# で書かれています
