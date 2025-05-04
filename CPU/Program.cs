@@ -1,0 +1,2 @@
+﻿
+TextGenerator.Generate(args);

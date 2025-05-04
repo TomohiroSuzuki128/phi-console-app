@@ -1,0 +1,18 @@
+﻿# Titanic 用語集
+ - The Titanic, a British luxury liner : 英国の豪華客船タイタニック号
+ - an opulent British passenger liner : 英国の豪華客船
+ - The Titanic : タイタニック号
+ - The RMS Titanic : RMSタイタニック号
+ - The Carpathia : カルパチア号
+ - The RMS Carpathia : RMSカルパチア号
+ - White Star Line : ホワイト・スター・ライン社
+ - Captain Edward Smith : エドワード・スミス船長
+ - "unsinkable" : 「不沈船」
+ - Southampton : サウサンプトン
+ - Newfoundland : ニューファンドランド
+ - deemed : と評された
+ - maiden voyage : 処女航海
+ - North Atlantic : 北大西洋
+ - distress signals : 遭難信号
+ - watertight compartments : 水密区画
+ - lifeboats : 救命ボート
