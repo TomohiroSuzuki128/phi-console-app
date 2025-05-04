@@ -40,7 +40,7 @@ public static class TextGenerator
 
         var sw = Stopwatch.StartNew();
 
-        using Model model = new Model(modelPath.Phi4Gpu);
+        using Model model = new Model(modelPath.Phi4Min128k);
 
         using Tokenizer tokenizer = new Tokenizer(model);
 

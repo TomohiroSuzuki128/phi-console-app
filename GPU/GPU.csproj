@@ -31,10 +31,14 @@
     <None Update="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="PhiConsoleApp\native-libs\D3D12Core.dll">
+    <None Update="native-libs\D3D12Core.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <TargetPath>runtimes\win-x64\native\D3D12Core.dll</TargetPath>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="native-libs\" />
   </ItemGroup>
 
 </Project>
