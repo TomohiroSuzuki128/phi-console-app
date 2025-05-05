@@ -1,67 +1,56 @@
-﻿using Microsoft.ML.OnnxRuntimeGenAI;
+﻿using Build5Nines.SharpVector;
+using Build5Nines.SharpVector.Data;
+using Microsoft.ML.OnnxRuntimeGenAI;
 using System.Diagnostics;
 using System.Text;
-using Build5Nines.SharpVector;
-using Build5Nines.SharpVector.Data;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Configuration;
 
-public static class TextGenerator
+public sealed class TextGenerator
 {
-    public static async void Generate(string[] args)
+    public Model Model { get; set; }
+    public Prompt Prompt { get; private set; }
+    public Option Option { get; private set; }
+    public string AdditionalDocumentsPath { get; private set; }
+
+    private string newLine = Environment.NewLine;
+
+    public string[] Args { get; private set; }
+
+    public TextGenerator(string[] args, Model model, Prompt prompt, Option option, string additionalDocumentsPath)
     {
-        var newLine = Environment.NewLine;
+        Args = args;
+        Model = model;
+        Prompt = prompt;
+        Option = option;
+        AdditionalDocumentsPath = additionalDocumentsPath;
+    }
 
-        var builder = Host.CreateApplicationBuilder(args);
-        builder.Configuration.Sources.Clear();
-        builder.Configuration
-            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-            .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
-            .Build();
-
-        var configuration = builder.Configuration;
-
-        var modelPath = new ModelPath(configuration);
-        var prompt = new Prompt(configuration);
-        var option = new Option(configuration);
-
-        string additionalDocumentsPath = configuration["additionalDocumentsPath"] ?? throw new ArgumentNullException("additionalDocumentsPath is not found");
-
-        using OgaHandle ogaHandle = new OgaHandle();
-
+    public async Task Generate()
+    {
         // RAG 用のベクトルデータベースのセットアップ
-        var additionalDocumentsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, additionalDocumentsPath);
+        var additionalDocumentsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AdditionalDocumentsPath);
         var vectorDatabase = new BasicMemoryVectorDatabase();
         LoadAdditionalDocuments(additionalDocumentsDirectory).Wait();
         Console.WriteLine();
 
-        // モデルのセットアップ
-        //Console.WriteLine($"Loading model:{newLine}{modelPath.Phi4Gpu}");
-
         var sw = Stopwatch.StartNew();
-
-        using Model model = new Model(modelPath.Phi4Min128k);
-
-        using Tokenizer tokenizer = new Tokenizer(model);
-
         sw.Stop();
 
         Console.WriteLine($"{newLine}Model loading time is {sw.Elapsed.Seconds:0.00} sec.\n");
 
         // 翻訳するかどうか
-        Console.WriteLine($"翻訳する：{newLine}{option.IsTranslate}");
+        Console.WriteLine($"翻訳する：{newLine}{Option.IsTranslate}");
         // RAG を使うかどうか
-        Console.WriteLine($"RAG を使う：{newLine}{option.IsUsingRag}");
+        Console.WriteLine($"RAG を使う：{newLine}{Option.IsUsingRag}");
 
         // プロンプトのセットアップ
-        Console.WriteLine($"{newLine}システムプロンプト：{newLine}{prompt.System}");
-        Console.WriteLine($"{newLine}ユーザープロンプト：{newLine}{prompt.User}{newLine}");
+        Console.WriteLine($"{newLine}システムプロンプト：{newLine}{Prompt.System}");
+        Console.WriteLine($"{newLine}ユーザープロンプト：{newLine}{Prompt.User}{newLine}");
 
         var translatedSystemPrompt = string.Empty;
-        if (option.IsTranslate)
+        if (Option.IsTranslate)
         {
             Console.WriteLine("Translated System Prompt:");
-            await foreach (var translatedPart in Translate(prompt.System, Language.Japanese, Language.English))
+            await foreach (var translatedPart in Translate(Model, Prompt.System, Language.Japanese, Language.English))
             {
                 Console.Write(translatedPart);
                 translatedSystemPrompt += translatedPart;
@@ -70,14 +59,14 @@ public static class TextGenerator
         }
         else
         {
-            translatedSystemPrompt = prompt.System;
+            translatedSystemPrompt = Prompt.System;
         }
 
         var translatedUserPrompt = string.Empty;
-        if (option.IsTranslate)
+        if (Option.IsTranslate)
         {
             Console.WriteLine("Translated User Prompt:");
-            await foreach (var translatedPart in Translate(prompt.User, Language.Japanese, Language.English))
+            await foreach (var translatedPart in Translate(Model, Prompt.User, Language.Japanese, Language.English))
             {
                 Console.Write(translatedPart);
                 translatedUserPrompt += translatedPart;
@@ -86,81 +75,86 @@ public static class TextGenerator
         }
         else
         {
-            translatedUserPrompt = prompt.User;
+            translatedUserPrompt = Prompt.User;
         }
 
         Console.WriteLine($"{newLine}システムプロンプト：{newLine}{translatedSystemPrompt}");
         Console.WriteLine($"{newLine}ユーザープロンプト：{newLine}{translatedUserPrompt}{newLine}");
 
         var fullPrompt = $@"<|system|>{translatedSystemPrompt}<|end|><|user|>{translatedUserPrompt}<|end|><|assistant|>";
-        var tokens = tokenizer.Encode(fullPrompt);
-
-        // プロンプトを投げて回答を得る
-        using var generatorParams = new GeneratorParams(model);
-        var sequences = tokenizer.Encode(fullPrompt);
-
-        generatorParams.SetSearchOption("max_length", 2048);
-        using var tokenizerStream = tokenizer.CreateStream();
-        using var generator = new Generator(model, generatorParams);
-
-        generator.AppendTokens(tokens[0].ToArray());
-
-        StringBuilder stringBuilder = new();
-
-        Console.WriteLine("Response：");
-
-        var totalTokens = 0;
-
-        string part;
-        sw = Stopwatch.StartNew();
-        while (!generator.IsDone())
+        using (var tokenizer = new Tokenizer(Model))
         {
-            try
+
+            var tokens = tokenizer.Encode(fullPrompt);
+
+            // プロンプトを投げて回答を得る
+            StringBuilder stringBuilder = new();
+
+            using (var generatorParams = new GeneratorParams(Model))
+            using (var generator = new Generator(Model, generatorParams))
             {
-                await Task.Delay(50).ConfigureAwait(false);
-                generator.GenerateNextToken();
-                part = tokenizerStream.Decode(generator.GetSequence(0)[^1]);
-                Console.Write(part);
-                stringBuilder.Append(part);
-                if (stringBuilder.ToString().Contains("<|end|>")
-                    || stringBuilder.ToString().Contains("<|user|>")
-                    || stringBuilder.ToString().Contains("<|system|>"))
+                generatorParams.SetSearchOption("max_length", 2000);
+                generator.AppendTokens(tokens[0].ToArray());
+
+                Console.WriteLine("Response：");
+
+                var totalTokens = 0;
+
+                string part;
+                sw = Stopwatch.StartNew();
+                using (var tokenizerStream = tokenizer.CreateStream())
                 {
-                    break;
+                    while (!generator.IsDone())
+                    {
+                        try
+                        {
+                            await Task.Delay(50).ConfigureAwait(false);
+                            generator.GenerateNextToken();
+                            part = tokenizerStream.Decode(generator.GetSequence(0)[^1]);
+                            Console.Write(part);
+                            stringBuilder.Append(part);
+                            if (stringBuilder.ToString().Contains("<|end|>")
+                                || stringBuilder.ToString().Contains("<|user|>")
+                                || stringBuilder.ToString().Contains("<|system|>"))
+                            {
+                                break;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine(ex);
+                            break;
+                        }
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex);
-                break;
-            }
-        }
-        Console.WriteLine($"{newLine}----------------------------------------{newLine}");
-        sw.Stop();
+                Console.WriteLine($"{newLine}----------------------------------------{newLine}");
+                sw.Stop();
 
-        totalTokens = generator.GetSequence(0).Length;
-
-        // 英語の回答を日本語に翻訳する
-        var translatedResponse = string.Empty;
-        if (option.IsTranslate)
-        {
-            Console.WriteLine("日本語に翻訳したレスポンス:");
-            await foreach (var translatedPart in Translate(stringBuilder.ToString(), Language.English, Language.Japanese))
-            {
-                Console.Write(translatedPart);
-                translatedResponse += translatedPart;
+                totalTokens = generator.GetSequence(0).Length;
             }
-            Console.WriteLine();
+
+            // 英語の回答を日本語に翻訳する
+            var translatedResponse = string.Empty;
+            if (Option.IsTranslate)
+            {
+                Console.WriteLine("日本語に翻訳したレスポンス:");
+                await foreach (var translatedPart in Translate(Model, stringBuilder.ToString(), Language.English, Language.Japanese))
+                {
+                    Console.Write(translatedPart);
+                    translatedResponse += translatedPart;
+                }
+                Console.WriteLine();
+            }
+            else
+            {
+                translatedResponse = stringBuilder.ToString();
+                Console.WriteLine($"{newLine}レスポンス：{newLine}{translatedResponse}");
+            }
+            Console.WriteLine($"----------------------------------------{newLine}");
         }
-        else
-        {
-            translatedResponse = stringBuilder.ToString();
-            Console.WriteLine($"{newLine}レスポンス：{newLine}{translatedResponse}");
-        }
-        Console.WriteLine($"----------------------------------------{newLine}");
 
         // 与えられたテキストを指定された言語に翻訳する
-        async IAsyncEnumerable<string> Translate(string text, Language sourceLanguage, Language targetLanguage)
+        async IAsyncEnumerable<string> Translate(Model model, string text, Language sourceLanguage, Language targetLanguage)
         {
             var systemPrompt = string.Empty;
             var instructionPrompt = string.Empty;
@@ -184,50 +178,50 @@ public static class TextGenerator
 
                 ragResult = await SearchVectorDatabase(vectorDatabase, text);
 
-                if (option.IsUsingRag && !string.IsNullOrEmpty(ragResult))
+                if (Option.IsUsingRag && !string.IsNullOrEmpty(ragResult))
                     instructionPrompt += $"{newLine}- The following glossary of terms should be actively used.";
 
-                userPrompt = (option.IsUsingRag && !string.IsNullOrEmpty(ragResult))
+                userPrompt = (Option.IsUsingRag && !string.IsNullOrEmpty(ragResult))
                     ? $"{instructionPrompt}{newLine}{ragResult}{newLine}Strictly following the above instructions, now translate the English into Japanese:{newLine}{text}"
                     : $"{instructionPrompt}{newLine}Strictly following the above instructions, now translate the English into Japanese:{newLine}{text}";
             }
 
-            var fullPrompt = $@"<|system|>{systemPrompt}<|end|><|user|>{userPrompt}<|end|><|assistant|>";
-            var tokens = tokenizer.Encode(fullPrompt);
-
-            using var generatorParams = new GeneratorParams(model);
-            generatorParams.SetSearchOption("min_length", 100);
-            generatorParams.SetSearchOption("max_length", 2000);
-
-            using var tokenizerStream = tokenizer.CreateStream();
-            using var generator = new Generator(model, generatorParams);
-
-            generator.AppendTokens(tokens[0].ToArray());
-
-            StringBuilder stringBuilder = new();
-            while (!generator.IsDone())
+            using (var generatorParams = new GeneratorParams(model))
+            using (var generator = new Generator(model, generatorParams))
+            using (var tokenizer = new Tokenizer(model))
+            using (var tokenizerStream = tokenizer.CreateStream())
             {
-                string streamingPart = string.Empty;
-                try
+                var fullPrompt = $@"<|system|>{systemPrompt}<|end|><|user|>{userPrompt}<|end|><|assistant|>";
+                var tokens = tokenizer.Encode(fullPrompt);
+
+                generatorParams.SetSearchOption("max_length", 2000);
+                generator.AppendTokens(tokens[0].ToArray());
+
+                StringBuilder stringBuilder = new();
+
+                while (!generator.IsDone())
                 {
-                    await Task.Delay(10).ConfigureAwait(false);
-                    //generator.ComputeLogits();
-                    generator.GenerateNextToken();
-                    streamingPart = tokenizerStream.Decode(generator.GetSequence(0)[^1]);
-                    stringBuilder.Append(streamingPart);
-                    if (stringBuilder.ToString().Contains("<|end|>")
-                        || stringBuilder.ToString().Contains("<|user|>")
-                        || stringBuilder.ToString().Contains("<|system|>"))
+                    string streamingPart = string.Empty;
+                    try
                     {
+                        await Task.Delay(10).ConfigureAwait(false);
+                        generator.GenerateNextToken();
+                        streamingPart = tokenizerStream.Decode(generator.GetSequence(0)[^1]);
+                        stringBuilder.Append(streamingPart);
+                        if (stringBuilder.ToString().Contains("<|end|>")
+                            || stringBuilder.ToString().Contains("<|user|>")
+                            || stringBuilder.ToString().Contains("<|system|>"))
+                        {
+                            break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine(ex);
                         break;
                     }
+                    yield return streamingPart;
                 }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine(ex);
-                    break;
-                }
-                yield return streamingPart;
             }
         }
 
@@ -272,6 +266,5 @@ public static class TextGenerator
 
             return result;
         }
-
     }
 }
